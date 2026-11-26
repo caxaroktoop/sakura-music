@@ -1,0 +1,41 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: mkdir -p www assets && mv index.html www/ && mv icon-only.png icon-foreground.png icon-background.png assets/
+      - run: npm install
+      - run: npx cap add android
+      - run: npx capacitor-assets generate --android
+      - name: Keep audio playing in background
+        run: |
+          cat > android/app/src/main/java/com/sakura/music/MainActivity.java <<'JAVA'
+          package com.sakura.music;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+            @Override public void onPause() {
+              super.onPause();
+              if (getBridge() != null && getBridge().getWebView() != null) {
+                getBridge().getWebView().onResume();
+                getBridge().getWebView().resumeTimers();
+              }
+            }
+          }
+          JAVA
+      - run: npx cap sync android
+      - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sakura-music-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
