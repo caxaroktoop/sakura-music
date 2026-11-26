@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#2a1020">
+<title>Sakura Music</title>
+<style>
+  :root {
+    --bg1: #2a1020;
+    --bg2: #4a1a35;
+    --card: rgba(255, 255, 255, 0.07);
+    --card-hover: rgba(255, 255, 255, 0.12);
+    --pink: #f48fb1;
+    --pink-deep: #d65082;
+    --text: #fff0f5;
+    --muted: #d9a3b8;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    background-attachment: fixed;
+    overflow: hidden;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  #petals { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .app {
+    position: relative; z-index: 1;
+    height: 100%; max-width: 560px; margin: 0 auto;
+    display: flex; flex-direction: column; padding: 16px 18px 12px;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; }
+  h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: .5px; }
+  h1 span { color: var(--pink); }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  .add-btn {
+    background: var(--pink-deep); padding: 9px 16px; border-radius: 999px;
+    font-size: 14px; font-weight: 600;
+  }
+  .add-btn:active { transform: scale(.97); }
+
+  .player { text-align: center; padding: 14px 0 6px; }
+  .cover {
+    width: min(52vw, 220px); aspect-ratio: 1; margin: 0 auto 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 25%, #ffc2d6, var(--pink-deep));
+    box-shadow: 0 10px 40px rgba(214, 80, 130, .45);
+    display: grid; place-items: center;
+  }
+  .cover svg { width: 78%; height: 78%; animation: spin 18s linear infinite; animation-play-state: paused; }
+  .playing .cover svg { animation-play-state: running; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .title {
+    font-size: 18px; font-weight: 600; margin: 4px 8px 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sub { font-size: 13px; color: var(--muted); min-height: 18px; }
+
+  .seek { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .seek span { width: 40px; font-variant-numeric: tabular-nums; }
+  .seek span:first-child { text-align: right; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; flex: 1; height: 5px; border-radius: 3px;
+    background: linear-gradient(to right, var(--pink) var(--p, 0%), rgba(255,255,255,.18) var(--p, 0%));
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.4);
+  }
+
+  .controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; }
+  .ctl { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+  .ctl svg { width: 24px; height: 24px; fill: currentColor; }
+  .ctl.on { color: var(--pink); }
+  .ctl:active { background: var(--card-hover); }
+  .ctl.main { width: 64px; height: 64px; background: var(--pink-deep); color: #fff; box-shadow: 0 6px 20px rgba(214, 80, 130, .5); }
+  .ctl.main svg { width: 30px; height: 30px; }
+  .ctl.big svg { width: 28px; height: 28px; color: var(--text); }
+  .repeat-one::after {
+    content: "1"; position: absolute; font-size: 9px; font-weight: 700; margin: 0 0 -2px 0;
+  }
+  .ctl { position: relative; }
+
+  .vol { display: flex; align-items: center; gap: 10px; margin: 10px 20px 0; color: var(--muted); }
+  .vol svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
+
+  .list-head { margin: 12px 2px 6px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; }
+  .list-head button { color: var(--pink); font-size: 13px; }
+  .list { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px 8px; -webkit-overflow-scrolling: touch; }
+  .track {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card); border-radius: 12px; padding: 10px 12px; margin-bottom: 6px;
+  }
+  .track:active { background: var(--card-hover); }
+  .track.current { background: rgba(244, 143, 177, .22); outline: 1px solid rgba(244, 143, 177, .5); }
+  .track .num { width: 22px; text-align: center; color: var(--muted); font-size: 12px; flex: none; }
+  .track.current .num { color: var(--pink); }
+  .track .name { flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+  .track .del { color: var(--muted); font-size: 20px; line-height: 1; padding: 2px 8px; }
+  .empty { text-align: center; color: var(--muted); padding: 36px 20px; font-size: 14px; line-height: 1.6; }
+  .empty b { color: var(--pink); }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+<canvas id="petals"></canvas>
+
+<div class="app" id="app">
+  <header>
+    <h1>🌸 Sakura <span>Music</span></h1>
+    <button class="add-btn" id="addBtn">+ Добавить</button>
+  </header>
+
+  <section class="player">
+    <div class="cover">
+      <svg viewBox="-50 -50 100 100" aria-hidden="true">
+        <g fill="#fff4f8">
+          <path id="pt" d="M0 0 C-14 -10 -16 -34 -4 -43 L0 -39 L4 -43 C16 -34 14 -10 0 0Z"/>
+          <use href="#pt" transform="rotate(72)"/>
+          <use href="#pt" transform="rotate(144)"/>
+          <use href="#pt" transform="rotate(216)"/>
+          <use href="#pt" transform="rotate(288)"/>
+        </g>
+        <circle r="7" fill="#d65082"/>
+      </svg>
+    </div>
+    <div class="title" id="title">Выбери музыку</div>
+    <div class="sub" id="sub">Нажми «Добавить» и выбери аудиофайлы</div>
+
+    <div class="seek">
+      <span id="cur">0:00</span>
+      <input type="range" id="seek" min="0" max="1000" value="0">
+      <span id="dur">0:00</span>
+    </div>
+
+    <div class="controls">
+      <button class="ctl" id="shuffle" aria-label="Перемешать">
+        <svg viewBox="0 0 24 24"><path d="M10.6 9.2 5.4 4 4 5.4l5.2 5.2 1.4-1.4zM14.5 4l2.0 2-12.5 12.6 1.4 1.4L17.9 7.4l2.1 2.1V4h-5.5zm.3 9.4-1.4 1.4 3.1 3.1-2.1 2.1H20v-5.5l-2 2-3.2-3.1z"/></svg>
+      </button>
+      <button class="ctl big" id="prev" aria-label="Предыдущий">
+        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+      </button>
+      <button class="ctl main" id="play" aria-label="Играть/пауза">
+        <svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="ctl big" id="next" aria-label="Следующий">
+        <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+      </button>
+      <button class="ctl" id="repeat" aria-label="Повтор">
+        <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+      </button>
+    </div>
+
+    <div class="vol">
+      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
+      <input type="range" id="vol" min="0" max="100" value="100">
+    </div>
+  </section>
+
+  <div class="list-head">
+    <span id="count">Плейлист пуст</span>
+    <button id="clearBtn">Очистить</button>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+
+<input type="file" id="file" accept="audio/*,.mp3,.m4a,.flac,.ogg,.wav,.aac,.opus" multiple>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var audio = $("audio");
+  var tracks = [];          // {id, name, blob}
+  var index = -1;
+  var shuffle = false;
+  var repeat = 0;           // 0 off, 1 all, 2 one
+  var objectUrl = null;
+  var dragging = false;
+
+  /* ---------- IndexedDB: the playlist survives restarts ---------- */
+  var dbp = new Promise(function (resolve, reject) {
+    var req = indexedDB.open("sakura-music", 1);
+    req.onupgradeneeded = function () { req.result.createObjectStore("tracks", { keyPath: "id", autoIncrement: true }); };
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error); };
+  });
+  function tx(mode, fn) {
+    return dbp.then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var t = db.transaction("tracks", mode);
+        var res = fn(t.objectStore("tracks"));
+        t.oncomplete = function () { resolve(res && res.result); };
+        t.onerror = function () { reject(t.error); };
+      });
+    });
+  }
+  function dbAll() { return tx("readonly", function (s) { return s.getAll(); }); }
+  function dbAdd(rec) { return tx("readwrite", function (s) { return s.add(rec); }); }
+  function dbDel(id) { return tx("readwrite", function (s) { return s.delete(id); }); }
+  function dbClear() { return tx("readwrite", function (s) { return s.clear(); }); }
+
+  /* ---------- helpers ---------- */
+  function fmt(t) {
+    if (!isFinite(t)) return "0:00";
+    var m = Math.floor(t / 60), s = Math.floor(t % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function clean(n) { return n.replace(/\.[^.]+$/, "").replace(/[_]+/g, " "); }
+  function setRange(el) {
+    var p = (el.value - el.min) / (el.max - el.min) * 100;
+    el.style.setProperty("--p", p + "%");
+  }
+
+  /* ---------- rendering ---------- */
+  function render() {
+    var list = $("list");
+    list.innerHTML = "";
+    if (!tracks.length) {
+      list.innerHTML = '<div class="empty">Здесь пока пусто 🌸<br>Нажми <b>«+ Добавить»</b> и выбери песни из памяти телефона. Они сохранятся в плейлисте.</div>';
+      $("count").textContent = "Плейлист пуст";
+      return;
+    }
+    $("count").textContent = "Треков: " + tracks.length;
+    tracks.forEach(function (t, i) {
+      var row = document.createElement("div");
+      row.className = "track" + (i === index ? " current" : "");
+      row.innerHTML = '<span class="num"></span><button class="name"></button><button class="del" aria-label="Удалить">×</button>';
+      row.querySelector(".num").textContent = i === index && !audio.paused ? "▶" : (i + 1);
+      row.querySelector(".name").textContent = clean(t.name);
+      row.querySelector(".name").onclick = function () { play(i); };
+      row.querySelector(".del").onclick = function (e) { e.stopPropagation(); remove(i); };
+      list.appendChild(row);
+    });
+  }
+  function updateUi() {
+    var t = tracks[index];
+    $("title").textContent = t ? clean(t.name) : "Выбери музыку";
+    $("sub").textContent = t ? "Трек " + (index + 1) + " из " + tracks.length : "Нажми «Добавить» и выбери аудиофайлы";
+    $("app").classList.toggle("playing", !audio.paused);
+    $("playIcon").innerHTML = audio.paused
+      ? '<path d="M8 5v14l11-7z"/>'
+      : '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+    $("shuffle").classList.toggle("on", shuffle);
+    $("repeat").classList.toggle("on", repeat > 0);
+    $("repeat").classList.toggle("repeat-one", repeat === 2);
+    render();
+  }
+
+  /* ---------- playback ---------- */
+  function play(i) {
+    if (i < 0 || i >= tracks.length) return;
+    index = i;
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(tracks[i].blob);
+    audio.src = objectUrl;
+    audio.play().catch(function () {});
+    setMediaSession();
+    updateUi();
+  }
+  function toggle() {
+    if (index < 0) { if (tracks.length) play(0); return; }
+    if (audio.paused) audio.play().catch(function () {}); else audio.pause();
+  }
+  function next(auto) {
+    if (!tracks.length) return;
+    if (auto && repeat === 2) { audio.currentTime = 0; audio.play(); return; }
+    var n;
+    if (shuffle && tracks.length > 1) {
+      do { n = Math.floor(Math.random() * tracks.length); } while (n === index);
+    } else {
+      n = index + 1;
+      if (n >= tracks.length) {
+        if (auto && repeat === 0) { audio.pause(); audio.currentTime = 0; updateUi(); return; }
+        n = 0;
+      }
+    }
+    play(n);
+  }
+  function prev() {
+    if (!tracks.length) return;
+    if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+    play(index <= 0 ? tracks.length - 1 : index - 1);
+  }
+  function remove(i) {
+    var id = tracks[i].id;
+    dbDel(id);
+    tracks.splice(i, 1);
+    if (i === index) {
+      audio.pause(); audio.removeAttribute("src"); audio.load(); index = -1;
+      if (tracks.length) { index = Math.min(i, tracks.length - 1); play(index); return; }
+    } else if (i < index) {
+      index--;
+    }
+    updateUi();
+  }
+
+  /* ---------- lock-screen / notification controls ---------- */
+  function setMediaSession() {
+    if (!("mediaSession" in navigator)) return;
+    var t = tracks[index];
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: t ? clean(t.name) : "Sakura Music",
+        artist: "Sakura Music",
+        album: "🌸"
+      });
+    } catch (e) {}
+  }
+  if ("mediaSession" in navigator) {
+    var set = function (a, f) { try { navigator.mediaSession.setActionHandler(a, f); } catch (e) {} };
+    set("play", function () { audio.play(); });
+    set("pause", function () { audio.pause(); });
+    set("previoustrack", prev);
+    set("nexttrack", function () { next(false); });
+    set("seekto", function (d) { if (d.seekTime != null) audio.currentTime = d.seekTime; });
+  }
+
+  /* ---------- events ---------- */
+  audio.addEventListener("play", updateUi);
+  audio.addEventListener("pause", updateUi);
+  audio.addEventListener("ended", function () { next(true); });
+  audio.addEventListener("loadedmetadata", function () { $("dur").textContent = fmt(audio.duration); });
+  audio.addEventListener("timeupdate", function () {
+    if (dragging) return;
+    $("cur").textContent = fmt(audio.currentTime);
+    if (audio.duration) {
+      $("seek").value = audio.currentTime / audio.duration * 1000;
+      setRange($("seek"));
+    }
+  });
+  var seek = $("seek");
+  seek.addEventListener("input", function () {
+    dragging = true; setRange(seek);
+    if (audio.duration) $("cur").textContent = fmt(seek.value / 1000 * audio.duration);
+  });
+  seek.addEventListener("change", function () {
+    if (audio.duration) audio.currentTime = seek.value / 1000 * audio.duration;
+    dragging = false;
+  });
+  var vol = $("vol");
+  vol.addEventListener("input", function () { audio.volume = vol.value / 100; setRange(vol); });
+  setRange(vol); setRange(seek);
+
+  $("play").onclick = toggle;
+  $("next").onclick = function () { next(false); };
+  $("prev").onclick = prev;
+  $("shuffle").onclick = function () { shuffle = !shuffle; updateUi(); };
+  $("repeat").onclick = function () { repeat = (repeat + 1) % 3; updateUi(); };
+  $("addBtn").onclick = function () { $("file").click(); };
+  $("clearBtn").onclick = function () {
+    if (!tracks.length || !confirm("Очистить весь плейлист?")) return;
+    audio.pause(); audio.removeAttribute("src"); audio.load();
+    tracks = []; index = -1; dbClear(); updateUi();
+  };
+  $("file").addEventListener("change", function () {
+    var files = Array.prototype.slice.call(this.files || []);
+    this.value = "";
+    var chain = Promise.resolve();
+    files.forEach(function (f) {
+      chain = chain.then(function () {
+        var rec = { name: f.name, blob: f };
+        return dbAdd(rec).then(function (id) { rec.id = id; tracks.push(rec); });
+      });
+    });
+    chain.then(function () {
+      var wasEmpty = index < 0;
+      updateUi();
+      if (wasEmpty && tracks.length) play(0);
+    });
+  });
+
+  /* ---------- falling petals ---------- */
+  var cv = $("petals"), cx = cv.getContext("2d"), W, H, petals = [];
+  function resize() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
+  resize(); addEventListener("resize", resize);
+  function mk(initial) {
+    return {
+      x: Math.random() * W, y: initial ? Math.random() * H : -20,
+      s: 6 + Math.random() * 9, v: 0.4 + Math.random() * 0.9,
+      sw: Math.random() * Math.PI * 2, r: Math.random() * Math.PI * 2,
+      rv: (Math.random() - 0.5) * 0.03, a: 0.25 + Math.random() * 0.4
+    };
+  }
+  for (var i = 0; i < 26; i++) petals.push(mk(true));
+  function frame() {
+    cx.clearRect(0, 0, W, H);
+    petals.forEach(function (p, i) {
+      p.y += p.v; p.sw += 0.015; p.x += Math.sin(p.sw) * 0.6; p.r += p.rv;
+      if (p.y > H + 20) petals[i] = mk(false);
+      cx.save();
+      cx.translate(p.x, p.y); cx.rotate(p.r);
+      cx.globalAlpha = p.a; cx.fillStyle = "#ffc2d6";
+      cx.beginPath();
+      cx.ellipse(0, 0, p.s, p.s * 0.6, 0, 0, Math.PI * 2);
+      cx.fill();
+      cx.restore();
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+
+  /* ---------- boot ---------- */
+  dbAll().then(function (rows) { tracks = rows || []; updateUi(); }).catch(function () { updateUi(); });
+})();
+</script>
+</body>
+</html>
