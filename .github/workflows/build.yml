@@ -2,6 +2,8 @@ name: Build APK
 on:
   push:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,3 +41,13 @@ jobs:
         with:
           name: sakura-music-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Publish public release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk sakura-music.apk
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest sakura-music.apk --target "$GITHUB_SHA" --latest \
+            --title "Sakura Music" \
+            --notes "Скачай sakura-music.apk и установи на Android. Сборка: $GITHUB_SHA"
