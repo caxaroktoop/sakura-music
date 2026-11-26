@@ -1,5 +1,6 @@
 {
   "appId": "com.sakura.music",
   "appName": "Sakura Music",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": { "CapacitorHttp": { "enabled": true } }
 }
