@@ -106,7 +106,7 @@ nav .on svg{color:var(--acc)}
 #sheet .box::before{content:"";width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);margin:0 auto 14px}
 #sheet .box>b{font-size:17px;margin-bottom:6px}
 #sheet button{text-align:left;padding:14px 0;border-bottom:1px solid var(--line);font-size:15px}
-#pnote{margin-top:10px;font-size:12px;color:var(--soft)}#pnote[hidden]{display:none}
+#pnote{margin-top:10px;font-size:13px;font-weight:600;color:var(--acc);text-align:left}#pnote[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){.sk i{animation:none}}
 </style></head>
 <body>
@@ -118,7 +118,7 @@ nav .on svg{color:var(--acc)}
 <div class="fbar"><button id="fx" aria-label="Закрыть"></button><span>Сейчас играет</span><i></i></div>
 <div class="art"><img alt=""></div>
 <div class="fmeta"><div><h2></h2><p></p></div><button id="fl" aria-label="Нравится"></button></div>
-<div id="pnote" hidden>Отрывок 30 секунд. Полная версия есть в Apple Music.</div><input id="seek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Перемотка"><div class="tm"><span id="t1">0:00</span><span id="t2">0:00</span></div>
+<button id="pnote" hidden>Отрывок 30 секунд. Слушать полностью в Spotify ›</button><input id="seek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Перемотка"><div class="tm"><span id="t1">0:00</span><span id="t2">0:00</span></div>
 <div class="ctl"><button class="sm" id="fa" aria-label="В плейлист"></button><button id="fp" aria-label="Назад"></button><button class="p" id="fpl" aria-label="Играть"></button><button id="fn" aria-label="Вперёд"></button><span class="sp"></span></div>
 </div></div>
 <div id="sheet"></div>
@@ -160,7 +160,7 @@ document.addEventListener("error",function(e){var t=e.target;if(t&&t.tagName==="
 var key=LS("key",""),src=LS("src","itunes"),local=[],liked=LS("liked",[]),lists=LS("lists",{});
 var tab="home",sub=null,genre="",q="",setupOpen=false,shown=[],queue=[],qi=-1,au=new Audio();
 var GEN=[["","Популярное",""],["pop","Поп","Pop"],["rock","Рок","Rock"],["electronic","Электроника","Electronic"],["hiphop","Хип-хоп","Hip-Hop/Rap"],["jazz","Джаз","Jazz"],["classical","Классика","Classical"],["lofi","Лоу-фай","Lo-Fi"],["ambient","Эмбиент","Ambient"]];
-var SRC=[["itunes","iTunes · все годы"],["audius","Audius"],["jamendo","Jamendo"]];
+var SRC=[["itunes","iTunes · все годы"],["audius","Audius"],["archive","Архив · старые записи"],["jamendo","Jamendo"]];
 var ERAS=[["","Популярное"],["60","60-е"],["70","70-е"],["80","80-е"],["90","90-е"],["00","2000-е"],["10","2010-е"],["20","2020-е"]];
 var ERA_CFG={
 "60":{y:[1960,1969],a:["The Beatles","The Rolling Stones","Bob Dylan","The Beach Boys","Aretha Franklin","Jimi Hendrix","The Doors","Simon & Garfunkel"]},
@@ -170,11 +170,13 @@ var ERA_CFG={
 "00":{y:[2000,2009],a:["Coldplay","Linkin Park","Rihanna","Amy Winehouse","Gorillaz","The Killers","Beyonce","50 Cent"]},
 "10":{y:[2010,2019],a:["Adele","The Weeknd","Imagine Dragons","Kendrick Lamar","Ed Sheeran","Lana Del Rey","Arctic Monkeys","Mac DeMarco"]},
 "20":{y:[2020,2029],a:["Dua Lipa","Olivia Rodrigo","Bad Bunny","Doja Cat","Harry Styles","Glass Animals","SZA","Tame Impala"]}};
-function CH(){return src==="itunes"?ERAS:GEN}
+var AERAS=[["","Популярное"],["10","1910-е"],["20","1920-е"],["30","1930-е"],["40","1940-е"],["50","1950-е"]];
+var ARCH_Y={"10":[1910,1919],"20":[1920,1929],"30":[1930,1939],"40":[1940,1949],"50":[1950,1959]};
+function CH(){return src==="itunes"?ERAS:src==="archive"?AERAS:GEN}
 function srcChips(){return SRC.map(function(x){return '<button data-a="src" data-s="'+x[0]+'" class="'+(src===x[0]?"on":"")+'">'+x[1]+'</button>'}).join("")}
 function yearsBlock(){var h='<div class="sec" style="margin-top:4px">Жанры</div>';
-  if(src!=="itunes")return h;
-  return '<div class="sec" style="margin-top:4px">Годы</div><div class="genres">'+ERAS.slice(1).map(function(e,i){return '<button class="gcard" data-era="'+e[0]+'" style="background:hsl('+(i*47+10)+' 40% 32%)">'+e[1]+'</button>'}).join("")+'</div><div class="sec">Жанры</div>'}
+  var el=src==="itunes"?ERAS:src==="archive"?AERAS:null;if(!el)return h;
+  return '<div class="sec" style="margin-top:4px">Годы</div><div class="genres">'+el.slice(1).map(function(e,i){return '<button class="gcard" data-era="'+e[0]+'" style="background:hsl('+(i*47+10)+' 40% 32%)">'+e[1]+'</button>'}).join("")+'</div><div class="sec">Жанры</div>'}
 var BROWSE=[["Поп","pop",330],["Рок","rock",8],["Хип-хоп","hip hop",36],["Электроника","electronic",200],["Джаз","jazz",270],["Классика","classical",160],["Лоу-фай","lofi",285],["Эмбиент","ambient",190],["Инди","indie",95],["R&B","r&b",345]];
 var SK=new Array(8).join("x").split("").map(function(){return '<div class="row sk"><i class="im"></i><div class="meta"><i class="l1"></i><i class="l2"></i></div></div>'}).join("");
 
@@ -184,12 +186,32 @@ async function apiA(p){
   var j=await (await fetch(u)).json();
   return (j.data||[]).filter(function(t){return t.is_streamable!==false}).map(function(t){return{id:"a"+t.id,name:t.title,artist:t.user&&t.user.name,img:t.artwork&&(t.artwork["480x480"]||t.artwork["150x150"]),url:B+t.id+"/stream?"+ap}});
 }
-function api(p){return src==="audius"?apiA(p):src==="itunes"?apiI(p):apiJ(p)}
+function api(p){return src==="audius"?apiA(p):src==="itunes"?apiI(p):src==="archive"?apiR(p):apiJ(p)}
 async function apiJ(p){
   var u="https://api.jamendo.com/v3.0/tracks/?"+new URLSearchParams(Object.assign({client_id:key,format:"json",limit:40,audioformat:"mp32",imagesize:300},p));
   var j=await (await fetch(u)).json();
   if(j.headers&&j.headers.status!=="success")throw new Error("api");
   return j.results.filter(function(t){return t.audio}).map(function(t){return{id:t.id,name:t.name,artist:t.artist_name,img:t.image||t.album_image,url:t.audio}});
+}
+async function apiR(p){
+  var q;
+  if(p.search){var w=p.search.replace(/[^\p{L}\p{N} ]/gu," ").replace(/ +/g," ").trim();if(!w)return[];
+    q="(title:("+w+") OR creator:("+w+")) AND mediatype:audio AND collection:(78rpm OR audio_music OR netlabels OR etree)"}
+  else{var y=ARCH_Y[p.era];q="mediatype:audio AND collection:78rpm"+(y?" AND year:["+y[0]+" TO "+y[1]+"]":"")}
+  var qs=new URLSearchParams();qs.set("q",q);
+  ["identifier","title","creator","year"].forEach(function(f){qs.append("fl[]",f)});
+  qs.set("rows","40");qs.set("output","json");qs.append("sort[]","downloads desc");
+  var j=await (await fetch("https://archive.org/advancedsearch.php?"+qs.toString())).json();
+  var one=function(v){return Array.isArray(v)?v[0]:v};
+  return ((j.response&&j.response.docs)||[]).filter(function(d){return d.title}).map(function(d){
+    return{id:"r"+d.identifier,arch:d.identifier,name:one(d.title),artist:one(d.creator)||"Архив",img:"https://archive.org/services/img/"+encodeURIComponent(d.identifier),url:"",year:d.year?String(one(d.year)):""}});
+}
+async function resolveArch(id){
+  var j=await (await fetch("https://archive.org/metadata/"+encodeURIComponent(id))).json();
+  var f=(j.files||[]).filter(function(x){return /\.mp3$/i.test(x.name)});
+  var best=f.filter(function(x){return /vbr/i.test(x.format||"")})[0]||f[0];
+  if(!best)return "";
+  return "https://archive.org/download/"+encodeURIComponent(id)+"/"+best.name.split("/").map(encodeURIComponent).join("/");
 }
 async function apiI(p){
   var base="https://itunes.apple.com/search?media=music&entity=song&limit=";
@@ -230,7 +252,7 @@ function homeHtml(){
   if(shown.length<8)return rows();
   return '<div class="tiles">'+shown.slice(0,6).map(tile).join("")+'</div><div class="sec">'+(genre?(CH().filter(function(g){return g[0]===genre})[0]||[0,"Подборка"])[1]:"Сейчас популярно")+'</div>'+rows(6);
 }
-function setup(){return '<div class="top"><h1>Источник музыки</h1></div><div class="chips">'+srcChips()+'</div>'+(src==="itunes"?'<div class="msg">iTunes: каталог почти всех исполнителей и всех лет. Играют отрывки по 30 секунд.</div>':src==="audius"?'<div class="msg">Audius: музыка независимых артистов. Ключ не нужен, рекламы нет.</div>':'<div class="msg">Jamendo: бесплатная лицензионная музыка. Нужен бесплатный client_id с devportal.jamendo.com.</div><input id="k" type="text" placeholder="client_id" value="'+esc(key)+'" autocapitalize="off" autocomplete="off">')+'<button class="go" data-a="save">Готово</button>'}
+function setup(){return '<div class="top"><h1>Источник музыки</h1></div><div class="chips">'+srcChips()+'</div>'+(src==="itunes"?'<div class="msg">iTunes: каталог почти всех исполнителей и всех лет. Играют отрывки по 30 секунд.</div>':src==="archive"?'<div class="msg">Архив: полные записи 1910–1950-х годов из Internet Archive (джаз, блюз, эстрада). Играют целиком.</div>':src==="audius"?'<div class="msg">Audius: музыка независимых артистов. Ключ не нужен, рекламы нет.</div>':'<div class="msg">Jamendo: бесплатная лицензионная музыка. Нужен бесплатный client_id с devportal.jamendo.com.</div><input id="k" type="text" placeholder="client_id" value="'+esc(key)+'" autocapitalize="off" autocomplete="off">')+'<button class="go" data-a="save">Готово</button>'}
 async function load(p,render){
   var r=$("#res");
   try{var d=await api(p);if(!document.body.contains(r))return;shown=d;r.innerHTML=render()}
@@ -245,7 +267,7 @@ function go(){
   if(sub){shown=sub.tracks;v.innerHTML='<div class="top"><button class="back" data-a="back" aria-label="Назад">'+I.back+'</button><h1>'+esc(sub.title)+"</h1></div>"+(shown.length?'<div class="msg" style="background:none;padding:0 0 8px;margin:0">'+pl(shown.length)+'</div>':'')+rows();return}
   if(tab==="home"){
     v.innerHTML='<div class="top"><h1>'+greet()+'</h1><button data-a="key" aria-label="Настройки">'+I.sliders+'</button></div><div class="chips">'+CH().map(function(g){return '<button data-g="'+g[0]+'" class="'+(g[0]===genre?"on":"")+'">'+g[1]+"</button>"}).join("")+'</div><div id="res">'+SK+'</div>';
-    load(src==="itunes"?{era:genre}:genre?{tags:genre,order:"popularity_week"}:{order:"popularity_week"},homeHtml);
+    load(src==="itunes"||src==="archive"?{era:genre}:genre?{tags:genre,order:"popularity_week"}:{order:"popularity_week"},homeHtml);
   }else if(tab==="search"){
     v.innerHTML='<div class="top"><h1>Поиск</h1></div><div class="chips">'+srcChips()+'</div><div class="search">'+I.search+'<input id="q" type="search" enterkeyhint="search" placeholder="Исполнитель или трек" value="'+esc(q)+'"></div><div id="res">'+(q?SK:yearsBlock()+'<div class="genres">'+BROWSE.map(function(b){return '<button class="gcard" data-q="'+esc(b[1])+'" style="background:hsl('+b[2]+' 42% 34%)">'+esc(b[0])+'</button>'}).join("")+'</div>')+"</div>";
     if(q)load({search:q},function(){return shown.length?rows():'<div class="empty">Ничего не найдено по запросу «'+esc(q)+'»</div>'});
@@ -322,7 +344,11 @@ idbAll().then(function(rows){
   if(tab==="lib"&&!sub)go()}).catch(function(){});
 
 /* player */
-function play(i){qi=i;var t=queue[qi];if(!t)return;au.src=t.url;au.play().catch(function(){});paint();
+async function play(i){qi=i;var t=queue[qi];if(!t)return;paint();
+  if(!t.url&&t.arch){au.pause();try{t.url=await resolveArch(t.arch)}catch(e){}
+    if(queue[qi]!==t)return;
+    if(!t.url){setTimeout(function(){if(queue[qi]===t)step(1)},400);return}}
+  au.src=t.url;au.play().catch(function(){});
   try{navigator.mediaSession.metadata=new MediaMetadata({title:t.name,artist:t.artist||"",artwork:t.img?[{src:t.img,sizes:"300x300"}]:[]})}catch(e){}}
 function step(d){if(queue.length)play((qi+d+queue.length)%queue.length)}
 function prev(){if(au.currentTime>3)au.currentTime=0;else step(-1)}
@@ -345,6 +371,7 @@ au.ontimeupdate=function(){if(au.duration){var p=au.currentTime/au.duration*100;
 $("#seek").oninput=function(){setP(this,this.value);if(au.duration)au.currentTime=this.value/100*au.duration};
 $("#mp").onclick=toggle;$("#fpl").onclick=toggle;$("#fn").onclick=function(){step(1)};$("#fp").onclick=prev;
 $("#mopen").onclick=function(){$("#full").classList.add("on")};$("#fx").onclick=function(){$("#full").classList.remove("on")};
+$("#pnote").onclick=function(){var t=queue[qi];if(t)location.href="https://open.spotify.com/search/"+encodeURIComponent(t.name+" "+(t.artist||""))};
 $("#fl").onclick=function(){if(queue[qi])toggleLike(queue[qi])};$("#fa").onclick=function(){if(queue[qi])addSheet(queue[qi])};
 try{navigator.mediaSession.setActionHandler("nexttrack",function(){step(1)});navigator.mediaSession.setActionHandler("previoustrack",prev);navigator.mediaSession.setActionHandler("play",toggle);navigator.mediaSession.setActionHandler("pause",toggle)}catch(e){}
 $("#fx").innerHTML=I.down;$("#fp").innerHTML=I.prev;$("#fn").innerHTML=I.next;$("#fa").innerHTML=I.plus;$("#fl").innerHTML=I.heart(false);icons();
